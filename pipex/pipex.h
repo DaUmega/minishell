@@ -6,7 +6,7 @@
 /*   By: pdong <pdong@student.codam.nl>               +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/01/03 16:03:38 by pdong         #+#    #+#                 */
-/*   Updated: 2023/01/03 17:37:29 by pdong         ########   odam.nl         */
+/*   Updated: 2023/01/10 19:49:13 by pdong         ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,12 @@
 
 typedef struct s_pipe
 {
-	int				pid;
 	int				index;
-	int				fd[2];
 	struct s_pipe	*prev;
 	struct s_pipe	*next;
 }	t_pipe;
 
-void	ft_error(void);
+void	ft_error(char *s);
 t_pipe	*ft_lnew(int index);
 void	ft_ladd_end(t_pipe **lst, t_pipe *new);
 int		lstsize(t_pipe **a);
