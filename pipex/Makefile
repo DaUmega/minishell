@@ -5,7 +5,7 @@ OBJS	= $(SRCS:.c=.o)
 NAME	= pipex
 LIBFT	= libft/libft.a
 
-CFLAGS	= -Wall -Werror -Wextra -pthread
+CFLAGS	= -Wall -Werror -Wextra
 
 HEADERS = 
 

@@ -6,7 +6,7 @@
 /*   By: pdong <pdong@student.codam.nl>               +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/01/03 13:37:37 by pdong         #+#    #+#                 */
-/*   Updated: 2023/01/10 19:49:40 by pdong         ########   odam.nl         */
+/*   Updated: 2023/01/03 18:35:06 by pdong         ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,52 +15,66 @@
 
 t_pipe	*pipe_creator(int n)
 {
-	t_pipe	*pipes;
+	t_pipe	*ans;
 	t_pipe	*temp;
 	int		i;
 
 	i = 0;
-	pipes = NULL;
+	ans = NULL;
 	while (i < n)
 	{
 		temp = ft_lnew(i);
-		ft_ladd_end(&pipes, temp);
+		ft_ladd_end(&ans, temp);
 		i++;
 	}
-	return (pipes);
+	return (ans);
 }
 
-void	pipe_ft(t_pipe **pipes, int fd[2])
+void	close_unrelated_fd(t_pipe **pipes, int i)
 {
 	t_pipe	*temp;
-	int		pid;
+
+	temp = *pipes;
+	while (temp)
+	{
+		if (temp->index == i)
+			close(temp->fd[1]);
+		if (temp->index == i + 1)
+			close(temp->fd[0]);
+		else
+		{
+			close(temp->fd[1]);
+			close(temp->fd[0]);
+		}
+		temp = temp->next;
+	}
+}
+
+void	pipe_ft(t_pipe **pipes)
+{
+	t_pipe	*temp;
 	int		n;
 
 	temp = *pipes;
 	while (temp)
 	{
-		pid = fork();
-		if (pid < 0)
-			ft_error("fork");
-		ft_printf("reading from: %d\n", fd[0]);
-		if (pid == 0)
+		temp->pid = fork();
+		if (temp->pid < 0)
+			ft_error();
+		if (temp->pid == 0)
 		{
-			if (read(fd[0], &n, sizeof(int)) < 0)
-				ft_error("read");
+			close_unrelated_fd(pipes, temp->index);
+			if (read(temp->fd[0], &n, sizeof(int)) < 0)
+				ft_error();
 			n = n + 5;
-			close(fd[0]);
 			if (!temp->next)
 			{
 				ft_printf("%d\n", n);
 				exit(EXIT_SUCCESS);
 			}
-			ft_printf("writing to: %d\n", fd[1]);
-			if (write(fd[1], &n, sizeof(int)) < 0)
-				ft_error("write");
-			close(fd[1]);
+			if (write(temp->next->fd[1], &n, sizeof(int)) < 0)
+				ft_error();
 		}
-		else
-			waitpid(pid, NULL, 0);
 		temp = temp->next;
 	}
 }
@@ -73,19 +87,20 @@ void	leakchk(void)
 int	main(void)
 {
 	t_pipe	*temp;
-	int		fd[2];
 	int		i;
 
 	atexit(leakchk);
 	i = 0;
-	if (pipe(fd) < 0)
-		ft_error("pipe");
-	temp = pipe_creator(1);
-	ft_printf("writing to: %d\n", fd[1]);
-	if (write(fd[1], &i, sizeof(int)) < 0)
-		ft_error("write");
-	pipe_ft(&temp, fd);
-	close(fd[0]);
-	close(fd[1]);
+	temp = pipe_creator(5);
+	close_unrelated_fd(&temp, -1);
+	ft_printf("%d\n", temp->next->next->fd[0]);
+	if (write(temp->fd[1], &i, sizeof(int)) < 0)
+		ft_error();
+	pipe_ft(&temp);
+	while (temp)
+	{
+		waitpid(temp->pid, NULL, 0);
+		temp = temp->next;
+	}
 	exit(EXIT_SUCCESS);
 }
